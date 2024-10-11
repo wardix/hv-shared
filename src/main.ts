@@ -11,14 +11,15 @@ const parsedCompanyConfig = JSON.parse(COMPANY_CONFIG)
 
 async function consumeMessages() {
   let backoffDelay = Number(MIN_BACKOFF_DELAY_SECONDS) * 1000
-  process.on('SIGINT', async () => {
-    await nc.drain()
-    process.exit()
-  })
 
   const nc = await connect({
     servers: NATS_SERVERS,
     token: NATS_TOKEN,
+  })
+
+  process.on('SIGINT', async () => {
+    await nc.drain()
+    process.exit()
   })
 
   const js = nc.jetstream()
@@ -38,12 +39,12 @@ async function consumeMessages() {
         if (companyId in parsedCompanyConfig) {
           for (const id of parsedCompanyConfig[companyId]) {
             forwardedHeaders.set('Company-ID', id)
-            await js.publish('hikvision_access_verified', message.data, {
+            await js.publish('events.hikvision_access_verified', message.data, {
               headers: forwardedHeaders,
             })
           }
         } else {
-          await js.publish('hikvision_access_verified', message.data, {
+          await js.publish('events.hikvision_access_verified', message.data, {
             headers: forwardedHeaders,
           })
         }
